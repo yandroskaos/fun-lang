@@ -9,4 +9,4 @@ test/*.log
 # Others #
 *.exe
 *.fun
-test.js
+test*.js

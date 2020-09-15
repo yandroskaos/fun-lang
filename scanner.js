@@ -1,11 +1,25 @@
-function onelineComment (input, head) {
+function updateWhere(charOrStr, where) {
+    for (const c of charOrStr) {
+        if (c == "\n")  {
+            where.line += 1;
+            where.column = 1;
+        } else {
+            where.column += 1
+        }
+    }
+}
+
+function onelineComment (input, head, where) {
     if(input[head] != "/" || input[head + 1] != "/") 
         return head
         
     head += 2
     while(head < input.length) {
-        if(input[head] == "\n")
+        updateWhere(input[head], where)
+
+        if(input[head] == "\n") {
             return head + 1
+        }
 
         head++
     }
@@ -13,7 +27,7 @@ function onelineComment (input, head) {
     return head;
 }
 
-function anidatedMultilineComments (input, head) {
+function anidatedMultilineComments (input, head, where) {
     if(input[head] != "/" || input[head + 1] != "*") 
         return head
         
@@ -22,31 +36,38 @@ function anidatedMultilineComments (input, head) {
         if(input[head] == "*" && input[head + 1] == "/")
             return head + 2
 
-        if(input[head] == "/" && input[head + 1] == "*")
+        if(input[head] == "/" && input[head + 1] == "*") {
             head = anidatedMultilineComments(input, head)
-        else
+        }
+        else {
+            updateWhere(input[head], where)
+
             head++
+        }
     }
 
     return head;
 }
 
-function spaces(input, head) {
+function spaces(input, head, where) {
     const pattern_spaces   = /^\s*/;
     const spaces = input.slice(head).match(pattern_spaces);
-    if(spaces)
+    if(spaces) {
+        updateWhere(spaces[0], where)
+
         head += spaces[0].length;
+    }
     
     return head;
 }
 
-function lint(input, head) {
+function lint(input, head, where) {
     let previous_head;
     do {
         previous_head = head
-        head = spaces(input, head)
-        head = onelineComment(input, head)
-        head = anidatedMultilineComments(input, head)
+        head = spaces(input, head, where)
+        head = onelineComment(input, head, where)
+        head = anidatedMultilineComments(input, head, where)
     }
     while(head > previous_head);
     return head;
@@ -67,6 +88,7 @@ function* scan(input) {
         ["&&", /^&&/],
         ["||", /^\|\|/],
         ["ID", /^[<>:=\+\-\*\/%!&|]{2,}/],
+        ["@", /^@/],
         [".", /^\./],
         [";", /^;/],
         ["[", /^\[/],
@@ -88,8 +110,9 @@ function* scan(input) {
     ]
 
     let head = 0;
+    const where = {line:1, column:1};
     while(head < input.length) {
-        head = lint(input, head);
+        head = lint(input, head, where);
 
         let token_found = false
         for(token of tokens) {
@@ -97,21 +120,23 @@ function* scan(input) {
             if(result) {
                 token_found = true
                 head += result[0].length;
-                yield {id:token[0], lexeme:result[0]} 
+                yield {id:token[0], lexeme:result[0], where:JSON.parse(JSON.stringify(where))} 
+                updateWhere(result[0], where)
                 break;
             }
         }
 
         if(!token_found){
             if(head == input.length){
-                return {id:"END", lexeme:"END"} 
+                return {id:"END", lexeme:"END", where:JSON.parse(JSON.stringify(where))} 
             } else {
                 head++;
-                yield {id:"ERROR", lexeme:input[head - 1]}
+                yield {id:"ERROR", lexeme:input[head - 1], where:JSON.parse(JSON.stringify(where))}
+                updateWhere(input[head - 1], where)
             }
         }
     }
-    return {id:"END", lexeme:"END"} 
+    return {id:"END", lexeme:"END", where:JSON.parse(JSON.stringify(where))} 
 }
 
 

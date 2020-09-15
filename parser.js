@@ -39,13 +39,19 @@ function prune(list) {
     return list.length == 1 ? list[0] : list;
 }
 
-function merge(list) {
-    switch(list.length) {
-        case 2: list[0].push(list[1])
-        case 1: return list[0];
-    }
+const merge = type => list => {
+    const hasName = list[0].type != undefined
+    const hasRest = list[list.length - 1].type != undefined
 
-    return list
+    let body = hasName ? list[1] : list[0]
+
+    if(hasRest)
+        body.push(list[list.length - 1])
+
+    if(hasName)
+        return {name: list[0].data, type, data:body}
+
+    return {type, data:body}
 }
 
 function toField(list) {
@@ -63,23 +69,24 @@ function toFunctionDefinition(list) {
     }
 }
 
-const toRule = name => data => ({name, data})
+const toRule = type => data => ({type, data})
 
-const literal_symbol       = rule.make()
-const literal_bool         = rule.make()
-const literal_number       = rule.make()
-const literal_string       = rule.make()
-const literal_basic        = rule.make()
-const literal_list         = rule.make()
-const literal_field        = rule.make()
-const literal_object       = rule.make()
-const literal              = rule.make()
+const operator          = rule.make()
 
-const pattern_variable     = rule.make()
+const expr_symbol       = rule.make()
+const expr_bool         = rule.make()
+const expr_number       = rule.make()
+const expr_string       = rule.make()
+const expr_basic        = rule.make()
+const expr_list         = rule.make()
+const expr_field        = rule.make()
+const expr_object       = rule.make()
+const expr              = rule.make()
+
 const pattern_placeholder  = rule.make()
 const pattern_basic        = rule.make()
-const pattern_rest_of_list = rule.make()
-const pattern_head_of_list = rule.make()
+const pattern_name         = rule.make()
+const pattern_rest         = rule.make()
 const pattern_list         = rule.make()
 const pattern_field        = rule.make()
 const pattern_object       = rule.make()
@@ -89,47 +96,58 @@ const function_argument    = rule.make()
 const function_definition  = rule.make()
 const function_body        = rule.make()
 const symbol               = rule.make()
-const operator             = rule.make()
+
 
 const program              = rule.make()
 
-rule.set(literal_symbol, match("ID"),                                              toRule("symbol")                        );
-rule.set(literal_bool,   match("BOOL"),                                            compose(toBool, toRule("bool"))         );
-rule.set(literal_number, match("NUMBER"),                                          compose(parseInt, toRule("number"))     );
-rule.set(literal_string, match("STRING"),                                          compose(pruneString, toRule("string"))  );
-rule.set(literal_basic,  choice(literal_bool, literal_number, literal_string, literal_symbol, operator)                    );
-rule.set(literal_list,   sequence(ignore("["), star(literal), ignore("]")),        compose(prune, toRule("list"))          );
-rule.set(literal_field,  sequence(match("ID"), ignore(":"), literal),              toField                                 );
-rule.set(literal_object, sequence(ignore("{"), star(literal_field), ignore("}")),  compose(prune, toRule("object"))        );
-rule.set(literal,        choice(literal_basic, literal_list, literal_object)                                               );
 
-rule.set(pattern_variable,     match("ID"),                                                                                    toRule("variable")                     );
-rule.set(pattern_placeholder,  match("_"),                                                                                     toRule("placeholder")                  );
-rule.set(pattern_basic,        choice(pattern_variable, pattern_placeholder, literal)                                                                                 );
-rule.set(pattern_rest_of_list, sequence(ignore("::"), match("ID")),                                                            compose(prune, toRule("rest_of_list")) );
-rule.set(pattern_head_of_list, sequence(notAt(pattern_rest_of_list), pattern),                                                 prune                                  );
-rule.set(pattern_list,         sequence(ignore("["), star(pattern_head_of_list), optional(pattern_rest_of_list), ignore("]")), compose(merge, toRule("list"))         );
-rule.set(pattern_field,        choice(sequence(choice(match("ID"), match("_")), ignore(":"), pattern), sequence(match("ID"))), toField                                );
-rule.set(pattern_object,       sequence(ignore("{"), star(pattern_field), ignore("}")),                                        compose(prune, toRule("object"))       );
-rule.set(pattern,              choice(pattern_list, pattern_object, pattern_basic)                                                                                    );
-
-rule.set(function_argument,    sequence(notAt(sequence(match("ID"), ignore("="))), pattern),                 prune                );
-rule.set(function_definition,  sequence(star(function_argument), match("ID"), ignore("="), function_body ),  toFunctionDefinition );
-rule.set(function_body,        sequence(plus(choice(symbol, literal, operator)), ignore(";")),               prune                );
-rule.set(symbol,               match("ID"),                                                                  toRule("symbol")     );
 rule.set(operator, choice(
     match("."), match(":"), match("::"), match("="),
     match("=="), match("!="), match(">="), match("<="), match(">"), match("<"),
     match("&&"), match("||"), match("!"),
-    match("+"), match("-"), match("*"), match("/"), match("%")
-    ), toRule("operator") );
+    match("+"), match("-"), match("*"), match("/"), match("%")),
+    
+    toRule("operator") );
+
+
+const aggregate_expr = (open, body, close) => sequence(ignore(open), star(body), ignore(close))
+
+rule.set(expr_symbol, match("ID"),                                           toRule("symbol")                       );
+rule.set(expr_bool,   match("BOOL"),                                         compose(toBool, toRule("bool"))        );
+rule.set(expr_number, match("NUMBER"),                                       compose(parseInt, toRule("number"))    );
+rule.set(expr_string, match("STRING"),                                       compose(pruneString, toRule("string")) );
+rule.set(expr_basic,  choice(expr_bool, expr_number, expr_string, expr_symbol, operator)                            );
+rule.set(expr_list,   aggregate_expr("[", expr,"]"),                         compose(prune, toRule("list"))         );
+rule.set(expr_field,  sequence(match("ID"), ignore(":"), expr),              toField                                );
+rule.set(expr_object, aggregate_expr("{", expr_field,"}"),                   compose(prune, toRule("object"))       );
+rule.set(expr,        choice(expr_basic, expr_list, expr_object)                                                    );
+
+const aggregate_pattern = (open, body, close) => sequence(optional(pattern_name), ignore(open), star(body), ignore(close), optional(pattern_rest))
+
+rule.set(pattern_placeholder,  match("_"),                             toRule("placeholder")          );
+rule.set(pattern_basic,        choice(pattern_placeholder, expr_basic)                                );
+rule.set(pattern_name,         sequence(match("ID"), ignore("@")),     compose(prune, toRule("name")) );
+rule.set(pattern_rest,         sequence(ignore("::"), match("ID")),    compose(prune, toRule("rest")) );
+rule.set(pattern_list,         aggregate_pattern("[", pattern, "]"),   merge("list") );
+rule.set(pattern_field,        choice(
+                                   sequence(choice(match("ID"), match("_")), ignore(":"), pattern),
+                                   sequence(match("ID"))),
+                               toField                                                                );
+rule.set(pattern_object,       aggregate_pattern("{", pattern_field, "}"), merge("object")            );
+rule.set(pattern,              choice(pattern_list, pattern_object, pattern_basic)                    );
+
+
+rule.set(function_argument,    sequence(notAt(sequence(match("ID"), ignore("="))), pattern),                 prune                );
+rule.set(function_definition,  sequence(star(function_argument), match("ID"), ignore("="), function_body ),  toFunctionDefinition );
+rule.set(function_body,        sequence(plus(choice(symbol, expr, operator)), ignore(";")),               prune                );
+rule.set(symbol,               match("ID"),                                                                  toRule("symbol")     );
 
 rule.set(program, sequence(plus(function_definition), ignore("END")), prune );
 
 const parse = program
 
 module.exports = {
-    literal,
+    expr,
     pattern,
     parse
 }
