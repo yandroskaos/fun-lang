@@ -87,7 +87,7 @@ function* scan(input) {
         ["<=", /^<=/],
         ["&&", /^&&/],
         ["||", /^\|\|/],
-        ["ID", /^[<>:=\+\-\*\/%!&|]{2,}/],
+        ["ID", /^[<>=\+\-\*\/%!&|]{2,}/],
         ["@", /^@/],
         [".", /^\./],
         [";", /^;/],
@@ -136,6 +136,7 @@ function* scan(input) {
             }
         }
     }
+
     return {id:"END", lexeme:"END", where:JSON.parse(JSON.stringify(where))} 
 }
 
