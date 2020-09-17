@@ -7,6 +7,7 @@ package-lock.json
 test/*.log
 
 # Others #
+.vscode/
 *.exe
 *.fun
 test*.js

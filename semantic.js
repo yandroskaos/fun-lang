@@ -1,15 +1,4 @@
-const util = require('util');
-
-const astGetFunction = (ast, name) => {
-    for(const fn of ast) {
-        if (fn.name == name) 
-            return fn;
-    }
-
-    return undefined;
-}
-
-const astFunctionExists = (ast, name) => astGetFunction(ast, name) != undefined;
+const {astFunctionExists} = require('./ast');
 
 const patternsContainSymbol = (patterns, symbol) => {
     return patterns.reduce( (result, pattern) => {
@@ -47,19 +36,18 @@ const functionProcessBodySymbols = (patterns, expr) => {
 }
 
 const astProcessSymbols = ast => {
-    for (const fn of ast) {
+    for (const fn of ast.fns) {
         for (const expr of fn.body) {
             functionProcessBodySymbols(fn.patterns, expr)
         }
     }
 }
 
-
 const astVerifyFunctionBodies = ast => {
     failure = false
-    for (const fn of ast) {
+    for (const fn of ast.fns) {
         for (const expr of fn.body) {
-            if (expr.type == "function" && !astFunctionExists(ast, expr.data)) {
+            if (expr.type == "function" && !ast.internals.includes(expr.data) && !astFunctionExists(ast, expr.data)) {
                 console.log(`Symbol "${expr.data}" in function "${fn.name}" is not defined as variable in patterns or function`)
                 failure = true;
             }

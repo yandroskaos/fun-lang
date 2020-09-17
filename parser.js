@@ -69,8 +69,10 @@ const toFunction = list => {
 
 const toExpr = type => data => ({type, data})
 
-
-
+const enhanceAst = fns => ({
+    internals:["show"],
+    fns
+})
 
 
 const operator          = rule.make()
@@ -137,7 +139,7 @@ rule.set(function_pattern,     sequence(notAt(sequence(match("ID"), ignore("="))
 rule.set(function_body,        sequence(plus(expr), ignore(";")),                                           prune      );
 rule.set(function_definition,  sequence(star(function_pattern), match("ID"), ignore("="), function_body ),  toFunction );
 
-rule.set(program, sequence(plus(function_definition), ignore("END")), prune );
+rule.set(program, sequence(plus(function_definition), ignore("END")), compose(prune, enhanceAst) );
 
 const parse = program
 
