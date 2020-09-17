@@ -1,90 +1,88 @@
 const util = require('util');
 
-
-function findSymbolInArguments(symbol, args) {
-    for (const arg of args) {
-        if (arg.name == symbol)
-            return true;
-
-        if ((arg.name == "variable" || arg.name == "rest_of_list") && (arg.data == symbol))
-            return true;
-
-        if ((arg.name == "list" || arg.name == "object") && findSymbolInArguments(symbol, arg.data))
-            return true;
-    }
-
-    return false;
-}
-
-function processFunctionSymbolsRec(item, args) {
-    if (item.name == "symbol") {
-        item.name = findSymbolInArguments(item.data, args) ?
-            "variable" :
-            "function" ;
-    } else if (item.name == "list") {
-        for(const e of item.data)
-            processFunctionSymbolsRec(e, args)
-    } else if (item.name == "object") {
-        for (const f of item.data){
-            processFunctionSymbolsRec(f.data, args)    
-        }
-    }
-}
-
-
-function processFunctionSymbols(fn) {
-    for (const i of fn.body)
-        processFunctionSymbolsRec(i, fn.arguments)
-}
-
-function processAst(ast) {
-    for (const fn of ast) {
-        processFunctionSymbols(fn)
-    }
-}
-
-function functionExists(name, ast) {
+const astGetFunction = (ast, name) => {
     for(const fn of ast) {
         if (fn.name == name) 
-            return true;
+            return fn;
     }
+
+    return undefined;
+}
+
+const astFunctionExists = (ast, name) => astGetFunction(ast, name) != undefined;
+
+const patternsContainSymbol = (patterns, symbol) => {
+    return patterns.reduce( (result, pattern) => {
+        return result || patternHasSymbol(pattern, symbol)
+    }, false);
+}
+
+const patternHasSymbol = (pattern, symbol) => {
+    if("name" in pattern)
+        if (pattern.name == symbol)
+            return true;
+
+    if (pattern.type == "symbol")
+        return pattern.data == symbol;
+
+    if (pattern.type == "rest")
+        return pattern.data == symbol;
+
+    if (pattern.type == "list" || pattern.type == "object")
+        return patternsContainSymbol(pattern.data, symbol);
+
     return false;
 }
 
-function verifyFunctionBody(body, ast) {
-    for (const item of body) {
-        if (item.name == "function" && !functionExists(item.data, ast)) {
-            console.log(item.data, "verifyFunctionsInBody")
-            return false
-        }
+const functionProcessBodySymbols = (patterns, expr) => {
+    if (expr.type == "symbol") {
+
+        expr.type = patternsContainSymbol(patterns, expr.data) ? "variable" : "function" ;
+
+    } else if (expr.type == "list" || expr.type == "object") {
+        
+        for(const item of expr.data)
+            functionProcessBodySymbols(patterns, item)
     }
-    return true;
 }
 
-function verifyFunctionsInBody(ast) {
+const astProcessSymbols = ast => {
     for (const fn of ast) {
-        if (!verifyFunctionBody(fn.body, ast)) {
-            console.log(fn.name, "verifyFunctionsInBody")
-            return false;
+        for (const expr of fn.body) {
+            functionProcessBodySymbols(fn.patterns, expr)
         }
     }
-    return true;
 }
 
-function checkMain(ast) {
-    return functionExists("main", ast)
+
+const astVerifyFunctionBodies = ast => {
+    failure = false
+    for (const fn of ast) {
+        for (const expr of fn.body) {
+            if (expr.type == "function" && !astFunctionExists(ast, expr.data)) {
+                console.log(`Symbol "${expr.data}" in function "${fn.name}" is not defined as variable in patterns or function`)
+                failure = true;
+            }
+        }
+    }
+
+    return !failure;
 }
+
+const astMainDefined = ast => astFunctionExists(ast, "main")
+
 
 function check(ast) {
-    processAst(ast);
+    //We substitute every symbol in body either as variable or function
+    astProcessSymbols(ast);
     
-    if(!verifyFunctionsInBody(ast)) {
-        console.log("verifyFunctionsInBody")
+    //Verify that every symbol classified as function is indeed defined
+    if(!astVerifyFunctionBodies(ast)) 
         return false;
-    }
 
-    if(!checkMain(ast)) {
-        console.log("checkMain")
+    //Verify "main" entry point is defined
+    if(!astMainDefined(ast)) {
+        console.log("No 'main' function defined")
         return false;
     }
 

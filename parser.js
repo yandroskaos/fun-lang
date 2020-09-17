@@ -63,8 +63,8 @@ const toField = list => {
 }
 
 const toFunction = list => {
-    const [pattern, name, body] = list
-    return {name, pattern, body}
+    const [patterns, name, body] = list
+    return {name, patterns, body}
 }
 
 const toExpr = type => data => ({type, data})
