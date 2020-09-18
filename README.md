@@ -6,7 +6,7 @@ It is also stack-based and uses pattern matching with the top of the stack to al
 As an introductory example:
 
 ```
-true then else branch = then . ;
+true  then else branch = then . ;
 false then else branch = else . ;
 
 []      _  map = [] ;
@@ -37,7 +37,7 @@ The basic types of __fun__ are numbers, strings and booleans.
 The composite types are lists and objects (javascript style, but only data)
 
 Another example:
-```js
+```
 []      _  map = [] ;
 [x]::xs fn map = x fn . xs fn map :: ;
 
@@ -54,14 +54,14 @@ There you can see that `::` is the `cons` primitive for lists while `:` is the a
 
 There can be a number of patterns for the stack to match previous to a function definition, or none:
 
-```js
+```
 x squareWithPattern = x x * ;
 
 squareWithoutPattern = dup * ;
 ```
 
 Interestingly enough, `dup` is not a primitive as in other concatenative languages, so you need to define yourself:
-```js
+```
 x   dup  = x x ;
 x y swap = y x ;
 x y drop = x ;
@@ -69,7 +69,7 @@ x y drop = x ;
 ```
 
 The list of patterns you can use are as follows:
-```js
+```
 1 matchExactConstant = ... ;
 
 a matchAny = ... ;
@@ -92,7 +92,7 @@ a matchAny = ... ;
 ```
 
 More examples:
-```js
+```
 // Bifurcations aka if-then-else
 true then else branch = then . ;
 false then else branch = else . ;
@@ -112,7 +112,7 @@ l f map = [l isEmpty] [[]] [l head f . l tail f map ::] ifte ;
 ```
 
 Also, there is no need to name the functions with letters, you can use symbols that have no previous meaning:
-```js
+```
 //Recursive factorial
 0 fact1 = 1 ;
 n fact1 = n n 1 - fact1 * ;
@@ -128,7 +128,7 @@ main = 5 fact1 5 1 fact2 5 !! ;
 ```
 
 You can name composite patterns to reference the full object when dissection is also needed to access a field:
-```js
+```
 
 // Bifurcations aka if-then-else
 true  then else branch = then . ;
@@ -148,7 +148,7 @@ main = {name:"John" surname:"Doe" email:"john@doe.com" birth:{day:16 month:5 yea
 ```
 
 If you need to show something, there is an (possibly temporary) internal function to do so:
-```js
+```
 
 0 fact = 1 ;
 n fact = n n 1 - fact1 * ;
@@ -156,9 +156,39 @@ n fact = n n 1 - fact1 * ;
 main = 5 fact show;
 ```
 
+Also, `apply` and `quote` can be defined as `dup` and the rest so technically the `apply` operator is not needed:
+```
+a empty = a ;
+
+a   dup  = a a ;
+a b swap = b a ;
+a b drop = a   ; // alternatively "a drop = empty"
+
+[]      apply = empty ; // Given we can't write '[] apply = ;' to mean the function does nothing, check 'empty'function
+[x]::xs apply = x xs apply ;
+
+  xs 0 quoteImpl = xs ;
+x xs n quoteImpl = x xs :: n 1 - quoteImpl ;
+     n quote     = [] n quoteImpl ;
+
+[]      ys compose = ys ;
+[x]::xs ys compose = x xs ys compose :: ;
+
+/*
+//Single element implementations could be:
+[a]     apply   = a ;
+a       quote   = [a] ;
+[a] [b] compose = [a b]
+*/
+
+
+main = [1 2 3 4] apply 4 quote [5 6 7 8] compose;
+```
+
 ## TODO
 A lot of things, this is a minimal proof of concept.
 The next iteration will allow to:
+ - Explore function literals, something like `(a b => b a)` (this would be  `swap`). Thinking about when more than one pattern is needed... something like: `(0 => 1 | n => n n 1 - rec)` where `rec` means self-reference... not sure, have to think about it.
  - Move from JS to C and explore ref-counted memory management (if something is not referenced from the stack, goodbye)
  - Explore the possibility to generate native binaries
  - Add I/O, FFI....
