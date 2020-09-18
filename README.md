@@ -10,13 +10,13 @@ true then else branch = then . ;
 false then else branch = else . ;
 
 []      _  map = [] ;
-[x::xs] fn map = x fn . xs fn map :: ;
+[x]::xs fn map = x fn . xs fn map :: ;
 
 []      _  filter = [] ;
-[x::xs] fn filter = x fn . [x xs fn filter ::] [xs fn filter] branch ;
+[x]::xs fn filter = x fn . [x xs fn filter ::] [xs fn filter] branch ;
 
 []      v _  reduce = v ;
-[x::xs] v fn reduce = xs v x fn . fn reduce ;
+[x]::xs v fn reduce = xs v x fn . fn reduce ;
 
 makeBigger  = 10 * ;
 bigEnough   = 50 > ;
@@ -39,7 +39,7 @@ The composite types are lists and objects (javascript style, but only data)
 Another example:
 ```js
 []      _  map = [] ;
-[x::xs] fn map = x fn . xs fn map :: ;
+[x]::xs fn map = x fn . xs fn map :: ;
 
 {}      _  map = {} ;
 {v l r} fn map = "v" v fn . "l" l fn map "r" r fn map {} : : : ;
@@ -70,13 +70,24 @@ x y drop = x ;
 The list of patterns you can use are as follows:
 ```js
 1 matchExactConstant = ... ;
+
 a matchAny = ... ;
+
 [] matchEmptyList = ... ;
-[a 2 "hello"] matchAList = ... ; //will match [true 2 "hello"], [[2 3 {}] 2 "hello"], etc...
-[a 2 "hello" :: rest] matchOtherList = ... ; //will match [true 2 "hello"], [[2 3 {}] 2 "hello"], [1 2 "hello" 2 3 4] where rest = [2 3 4], etc...
+
+// Will match [true 2 "hello"], [[2 3 {}] 2 "hello"], etc...
+[a 2 "hello"] matchAList = ... ; 
+
+// Will match [true 2 "hello"], [[2 3 {}] 2 "hello"], [1 2 "hello" 2 3 4] where rest = [2 3 4], etc...
+[a 2 "hello" :: rest] matchOtherList = ... ; 
+
 {} matchEmptyObject = ... ;
-{a} matchObjectsWithAKeyNamed_a = ... ; // will match {a:2 b:3}, {a:[2 3]}, etc...
-{a:1 b:_ _:true _:_} matchObject = ... ; // will match object with a key "a" with value 1, which has a key "b", also any key with a true value, and at least 4 members
+
+ // Will match {a:2 b:3}, {a:[2 3]}, etc...
+{a} matchObjectsWithAKeyNamed_a = ... ;
+
+// Will match object with a key "a" with value 1, which has a key "b", also any key with a true value, and at least 4 members
+{a:1 b:_ _:true _:_} matchObject = ... ; 
 ```
 
 More examples:
@@ -88,11 +99,11 @@ cond then else ifte = cond . then else branch;
 
 // Check if a list is empty or not
 []      isEmpty = true ;
-[x::xs] isEmpty = false ;
+[x]::xs isEmpty = false ;
 
 // Typical head + tail functional functions for lists
-[x::xs] head = x ;
-[x::xs] tail = xs ;
+[x]::xs head = x ;
+[x]::xs tail = xs ;
 
 // Map defined in one line
 l f map = [l isEmpty] [[]] [l head f . l tail f map ::] ifte ;
@@ -115,11 +126,38 @@ n !! = n 1 fact2 ;
 main = 5 fact1 5 1 fact2 5 !! ;
 ```
 
+You can name composite patterns to reference the full object when dissection is also needed to access a field:
+```js
+
+// Bifurcations aka if-then-else
+true  then else branch = then . ;
+false then else branch = else . ;
+cond  then else ifte   = cond . then else branch;
+
+today = ... ;
+performOtherDuties = ... ;
+
+person@{name email birth}::rest sendEmailOnBirthday = 
+        [today birth ==] 
+            [ "Congrats on your bithday " name "!" + + "Congrats!" email send ] 
+            [ person performOtherDuties ] 
+        ifte ;
+
+main = {name:"John" surname:"Doe" email:"john@doe.com" birth:{day:16 month:5 year:1978} address:... }  sendEmailOnBirthday;
+```
+
+If you need to show something, there is an (possibly temporary) internal function to do so:
+```js
+
+0 fact = 1 ;
+n fact = n n 1 - fact1 * ;
+
+main = 5 fact show;
+```
+
 ## TODO
 A lot of things, this is a minimal proof of concept.
 The next iteration will allow to:
- - Name composite parameters, something as `list@[x::xs]`, in patterns.
- - Name 'the rest of the object' as in lists, something as `{x y ::rest}`
  - Move from JS to C and explore ref-counted memory management (if something is not referenced from the stack, goodbye)
  - Explore the possibility to generate native binaries
  - Add I/O, FFI....
