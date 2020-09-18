@@ -27,17 +27,17 @@ numbers = [ 3 4 6 10 4 11 ] ;
 main = numbers [makeBigger] map [bigEnough] filter [smallEnough] filter 0 [+] reduce ;
 ```
 
-This program applies map, filter and reduce sequentially to a list of numbers.
+This program applies `map`, `filter` and `reduce` sequentially to a list of numbers.
 
-Also introduces __branch__ which is a function that basically performs bifurcation (if-then-else way).
+Also introduces `branch` which is a function that basically performs bifurcation (if-then-else way).
 
-__Fun__ is influenced by __joy__ so the lists are also quotations and can be invoked with the apply operator (the dot .)
+__Fun__ is influenced by __joy__ so the lists are also quotations and can be invoked with the apply operator (the dot `.`)
 
 The basic types of __fun__ are numbers, strings and booleans.
 The composite types are lists and objects (javascript style, but only data)
 
 Another example:
-```
+```js
 []      _  map = [] ;
 [x::xs] fn map = x fn . xs fn map :: ;
 
@@ -54,13 +54,13 @@ There you can see that `::` is the `cons` primitive for lists while `:` is the a
 
 There can be a number of patterns for the stack to match previous to a function definition, or none:
 
-```
+```js
 x squareWithPattern = x x * ;
 squareWithoutPattern = dup * ;
 ```
 
 Interestingly enough, `dup` is not a primitive as in other concatenative languages, so you need to define yourself:
-```
+```js
 x dup = x x ;
 x y swap = y x ;
 x y drop = x ;
@@ -68,7 +68,7 @@ x y drop = x ;
 ```
 
 The list of patterns you can use are as follows:
-```
+```js
 1 matchExactConstant = ... ;
 a matchAny = ... ;
 [] matchEmptyList = ... ;
@@ -80,7 +80,7 @@ a matchAny = ... ;
 ```
 
 More examples:
-```
+```js
 // Bifurcations aka if-then-else
 true then else branch = then . ;
 false then else branch = else . ;
@@ -100,7 +100,7 @@ l f map = [l isEmpty] [[]] [l head f . l tail f map ::] ifte ;
 ```
 
 Also, there is no need to name the functions with letters, you can use symbols that have no previous meaning:
-```
+```js
 //Recursive factorial
 0 fact1 = 1 ;
 n fact1 = n n 1 - fact1 * ;
