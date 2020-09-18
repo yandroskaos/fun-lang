@@ -56,12 +56,13 @@ There can be a number of patterns for the stack to match previous to a function 
 
 ```js
 x squareWithPattern = x x * ;
+
 squareWithoutPattern = dup * ;
 ```
 
 Interestingly enough, `dup` is not a primitive as in other concatenative languages, so you need to define yourself:
 ```js
-x dup = x x ;
+x   dup  = x x ;
 x y swap = y x ;
 x y drop = x ;
 // etc...
@@ -79,7 +80,7 @@ a matchAny = ... ;
 [a 2 "hello"] matchAList = ... ; 
 
 // Will match [true 2 "hello"], [[2 3 {}] 2 "hello"], [1 2 "hello" 2 3 4] where rest = [2 3 4], etc...
-[a 2 "hello" :: rest] matchOtherList = ... ; 
+[a 2 "hello"] :: rest matchOtherList = ... ; 
 
 {} matchEmptyObject = ... ;
 
