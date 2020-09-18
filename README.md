@@ -129,7 +129,6 @@ main = 5 fact1 5 1 fact2 5 !! ;
 
 You can name composite patterns to reference the full object when dissection is also needed to access a field:
 ```
-
 // Bifurcations aka if-then-else
 true  then else branch = then . ;
 false then else branch = else . ;
@@ -149,7 +148,6 @@ main = {name:"John" surname:"Doe" email:"john@doe.com" birth:{day:16 month:5 yea
 
 If you need to show something, there is an (possibly temporary) internal function to do so:
 ```
-
 0 fact = 1 ;
 n fact = n n 1 - fact1 * ;
 
