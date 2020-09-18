@@ -162,7 +162,7 @@ a   dup  = a a ;
 a b swap = b a ;
 a b drop = a   ; // alternatively "a drop = empty"
 
-[]      apply = empty ; // Given we can't write '[] apply = ;' to mean the function does nothing, check 'empty'function
+[]      apply = empty ; // Given we can't write '[] apply = ;' to mean the function does nothing, check 'empty' function
 [x]::xs apply = x xs apply ;
 
   xs 0 quoteImpl = xs ;
@@ -187,6 +187,52 @@ main = [1 2 3 4] apply 4 quote [5 6 7 8] compose;
 A lot of things, this is a minimal proof of concept.
 The next iteration will allow to:
  - Explore function literals, something like `(a b => b a)` (this would be  `swap`). Thinking about when more than one pattern is needed... something like: `(0 => 1 | n => n n 1 - rec)` where `rec` means self-reference... not sure, have to think about it.
+ - Explore ADTs... something like `type Maybe = Nothing | Just(x)` or `type BinTree = Empty | Node(info BinTree BinTree)` and then use in patterns as:
+ ```
+type BinTree = Empty | x BinTree BinTree Node ; //Node(x BinTree BinTree) ?
+
+Empty            element insert = element Empty Empty Node ;
+n@Node(info l r) element insert = 
+        [element info <] 
+            [info l element insert r Node]
+            [
+                [element info >]
+                    [info l r element insert Node]
+                    [n]
+                ifte
+            ] 
+        ifte ;
+
+type List = Empty | x List Cons ; // Or Cons(x List) ?
+
+//Integrated Lists...
+// []      isEmpty = true ;
+// [x]::xs isEmpty = false ;
+//
+// [x]::xs head = x ;
+// [x]::xs tail = xs ;
+//
+// []      _  map = [] ;
+// [x]::xs fn map = x fn . xs fn map :: ;
+//
+//versus ADT lists:
+
+Empty        isEmpty = true ;
+Cons(x List) isEmpty = false ;
+
+Cons(x List)    head = x ;
+Cons(x xs@List) tail = xs ;
+
+Empty           _  map = Empty ;
+Cons(x xs@List) fn map = x fn . xs fn map Cons ;
+
+
+main = 2 1 Empty Empty Node Empty Node 3 insert;
+```
+but note the two-folded role for the ADTs tags, as constructor functions and as tag matcher...
+On the other hand maybe ADTs are all is needed and dont need special syntax for lists and objects.
+Also, they introduce the notion of type as and structural thing... But in order to be minimalistic, maybe is good there are only basic types and every composite type is an ADT...
+
  - Move from JS to C and explore ref-counted memory management (if something is not referenced from the stack, goodbye)
  - Explore the possibility to generate native binaries
  - Add I/O, FFI....
