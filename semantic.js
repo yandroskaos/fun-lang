@@ -79,7 +79,7 @@ const astVerifyFunctionPatterns = ast => {
         } , {})
 
         for (const symbol in groupedSymbols) {
-            if(groupedSymbols[symbol] > 1) {
+            if(symbol != "_" && groupedSymbols[symbol] > 1) {
                 console.log(`Symbol "${symbol}" in function "${fn.name}" is defined ${groupedSymbols[symbol]} times in function pattern`)
                 failure = true;
             }

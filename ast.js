@@ -11,7 +11,7 @@ const astGetFunction = (ast, name) => {
 
 const astFunctionExists = (ast, name) => astGetFunction(ast, name).length > 0;
 
-function objectFindField(name, object) {
+function objectFindField(object, name) {
     for(const item of object.data) {
         if (item.name == name) {
             return item

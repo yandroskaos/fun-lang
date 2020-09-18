@@ -434,7 +434,7 @@ function evaluate(program, debug = false) {
                     }
 
                     if(!success) {
-                        console.log("[ERROR] No stack match for function: ", fn.name)
+                        console.log("[ERROR] No stack match for function: ", defs[0].name)
                         console.log("DATA = ", util.inspect(data, false, null, true))
                         return
                     }
