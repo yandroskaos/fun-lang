@@ -221,7 +221,10 @@ function matchItem(pattern, actual, ctx) {
         case "any":
             return true
 
-        case "symbol":
+        case "function":
+            return (actual.type == pattern.type && actual.data == pattern.data)
+    
+        case "variable":
             ctx[pattern.data] = actual
             return true
 
@@ -316,7 +319,7 @@ function matchObject(pattern, actual, ctx) {
                 return false
 
             // Add variable to ctx
-            ctx[patternItem.name] = copy(actualItem.data)
+            ctx[patternItem.name] = copy(actualItem)
         } else {
             if(patternItem.type != "any") {
                 

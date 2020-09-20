@@ -60,10 +60,25 @@ const functionProcessBodySymbols = (patterns, expr) => {
     }
 }
 
+const functionProcessPatternsSymbols = (ast, expr) => {
+    if (expr.type == "symbol") {
+
+        expr.type = astFunctionExists(ast, expr.data) ? "function" : "variable";
+
+    } else if (expr.type == "list" || expr.type == "object") {
+        
+        for(const item of expr.data)
+            functionProcessPatternsSymbols(ast, item)
+    }
+}
+
 const astProcessSymbols = ast => {
     for (const fn of ast.fns) {
         for (const expr of fn.body) {
             functionProcessBodySymbols(fn.patterns, expr)
+        }
+        for (const expr of fn.patterns) {
+            functionProcessPatternsSymbols(ast, expr)
         }
     }
 }
