@@ -129,7 +129,7 @@ const aggregate_pattern = (open, body, close) => sequence(optional(pattern_name)
 rule.set(pattern_placeholder,  match("_"),                                                                          () => ({type:"any"})           );
 rule.set(pattern_basic,        choice(pattern_placeholder, expr_basic)                                                                             );
 rule.set(pattern_name,         sequence(match("ID"), ignore("@")),                                                  compose(prune, toExpr("name")) );
-rule.set(pattern_rest,         sequence(ignore("::"), match("ID")),                                                 compose(prune, toExpr("rest")) );
+rule.set(pattern_rest,         sequence(ignore("#"), match("ID")),                                                  compose(prune, toExpr("rest")) );
 rule.set(pattern_list,         aggregate_pattern("[", pattern, "]"),                                                merge("list")                  );
 rule.set(pattern_field,        sequence(choice(match("ID"), match("_")), optional(sequence(ignore(":"), pattern))), toField                        );
 rule.set(pattern_object,       aggregate_pattern("{", pattern_field, "}"),                                          merge("object")                );
